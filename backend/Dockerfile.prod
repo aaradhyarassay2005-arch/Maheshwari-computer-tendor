@@ -1,0 +1,49 @@
+# Stage 1: Build dependencies
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+# Install dependencies into user local directory
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Stage 2: Final runner image
+FROM python:3.12-slim AS runner
+
+WORKDIR /app
+
+# Copy installed packages from builder stage
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# Create non-root application user and group
+RUN groupadd -g 10001 appgroup && \
+    useradd -u 10001 -g appgroup -m -s /bin/bash appuser
+
+# Create required directories for database volume mounts and Prometheus multiprocess metrics
+RUN mkdir -p /app/data /tmp/prometheus_multiproc_dir && \
+    chown -R appuser:appgroup /app /tmp/prometheus_multiproc_dir
+
+# Copy application source code and migrations config
+COPY --chown=appuser:appgroup app/ /app/app/
+COPY --chown=appuser:appgroup alembic/ /app/alembic/
+COPY --chown=appuser:appgroup alembic.ini /app/
+
+# Switch to non-root user
+USER appuser
+
+# Set python runtime environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc_dir \
+    HF_HOME=/home/appuser/.cache/huggingface
+
+EXPOSE 8000
+
+# Run migrations and launch FastAPI application
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

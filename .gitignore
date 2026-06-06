@@ -1,0 +1,51 @@
+# Python Virtual Environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Databases & Local Data
+temp_db.sqlite
+*.db
+*.sqlite
+data/qdrant/
+data/uploads/
+prometheus_multiproc_dir/
+
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+build/
+.next-env.d.ts
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / System files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment configs (do not commit secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.backend.prod
+.env.frontend.prod

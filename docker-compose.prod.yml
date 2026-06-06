@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: production_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - frontend-net
+      - backend-net
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - NEXT_PUBLIC_API_URL=https://tenderintel.yourdomain.com/api/v1
+    container_name: production_frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=https://tenderintel.yourdomain.com/api/v1
+    networks:
+      - frontend-net
+      - backend-net
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: production_backend
+    env_file:
+      - .env.backend.prod
+    volumes:
+      - backend-storage:/app/data
+    depends_on:
+      - postgres
+      - qdrant
+    networks:
+      - backend-net
+      - data-net
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: production_postgres
+    environment:
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=prod_secure_password_db
+      - POSTGRES_DB=tender_intel
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - data-net
+    restart: always
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: production_qdrant
+    environment:
+      - QDRANT__SERVICE__API_KEY=prod_secure_qdrant_api_key_here
+    volumes:
+      - qdrant-storage:/qdrant/storage
+    networks:
+      - data-net
+    restart: always
+
+networks:
+  frontend-net:
+  backend-net:
+  data-net:
+    internal: true # Totally isolated network for data layer
+
+volumes:
+  backend-storage:
+  postgres-data:
+  qdrant-storage:
