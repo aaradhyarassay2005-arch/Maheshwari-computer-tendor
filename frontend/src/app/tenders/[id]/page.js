@@ -136,6 +136,16 @@ export default function TenderDetails() {
         bid_system: metadata.bid_system || "",
         contract_type: metadata.contract_type || ""
       });
+
+      // Auto-populate similar work rule from Excel if experience rules is empty or default
+      if (metadata.raw_text) {
+        setProfileInput(prev => {
+          if (!prev.rules || prev.rules === "Must have executed 1 railway signaling project of 50M INR") {
+            return { ...prev, rules: metadata.raw_text };
+          }
+          return prev;
+        });
+      }
     }
   }, [metadata]);
 

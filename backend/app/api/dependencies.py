@@ -64,9 +64,10 @@ async def get_document_repository(
 async def get_tender_service(
     repo: SQLAlchemyTenderRepository = Depends(get_tender_repository),
     doc_repo: SQLAlchemyTenderDocumentRepository = Depends(get_document_repository),
+    metadata_repo: SQLAlchemyTenderMetadataRepository = Depends(get_metadata_repository),
 ) -> TenderService:
-    """Instantiates and returns the TenderService configured with the Tender and Document repositories."""
-    return TenderService(repo, doc_repo)
+    """Instantiates and returns the TenderService configured with the repositories."""
+    return TenderService(repo, doc_repo, metadata_repo)
 
 
 

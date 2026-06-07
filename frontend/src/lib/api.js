@@ -347,6 +347,16 @@ export const api = {
     return handleResponse(response);
   },
 
+  async importProjectsExcel(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await request("/projects/import-excel", {
+      method: "POST",
+      body: formData
+    });
+    return handleResponse(response);
+  },
+
   async getReviewQueue() {
     const response = await request("/reviews/queue");
     return handleResponse(response);

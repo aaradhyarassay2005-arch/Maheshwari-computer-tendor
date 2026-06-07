@@ -3,9 +3,6 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import structlog
 import asyncio
-import subprocess
-import sys
-from pathlib import Path
 
 from app.core.config import settings
 from app.core.logging import setup_logging
@@ -132,20 +129,6 @@ app.include_router(admin_router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup_event():
-    # Ensure database schema exists before background workers start touching tables.
-    project_root = Path(__file__).resolve().parents[2]
-
-    def run_migrations() -> None:
-        subprocess.run(
-            [sys.executable, "-m", "alembic", "upgrade", "head"],
-            cwd=str(project_root),
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-    await asyncio.to_thread(run_migrations)
-
     # Start download worker in non-test environments
     if settings.ENV != "test":
         start_worker(interval_seconds=15)

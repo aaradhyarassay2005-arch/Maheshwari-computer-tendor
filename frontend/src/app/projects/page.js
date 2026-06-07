@@ -37,6 +37,7 @@ export default function ProjectsPage() {
 
   // Uploader form states
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadMode, setUploadMode] = useState("single"); // single or excel
   const [documentType, setDocumentType] = useState("LOA");
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(null);
@@ -117,6 +118,27 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleExcelUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadSuccess(null);
+    setUploadError(null);
+
+    try {
+      const result = await api.importProjectsExcel(file);
+      setUploadSuccess(`Import complete! Inserted ${result.inserted} projects, duplicates: ${result.duplicates}, failed: ${result.failed}`);
+      fetchProjects();
+      fetchCapabilities();
+      setTimeout(() => setShowUploadModal(false), 3000);
+    } catch (err) {
+      setUploadError(err.message || "Failed to import projects from Excel");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // Unique domains list
   const domainsList = ["ALL", "Signaling", "Telecom", "Civil", "Electrical", "Mechanical"];
 
@@ -164,51 +186,118 @@ export default function ProjectsPage() {
               </h3>
               <button 
                 onClick={() => setShowUploadModal(false)}
-                className="text-slate-400 hover:text-slate-200 text-xs font-medium"
+                className="text-slate-400 hover:text-slate-200 text-xs font-medium cursor-pointer"
               >
                 Close
               </button>
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Document Type</label>
-                <select
-                  value={documentType}
-                  onChange={(e) => setDocumentType(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-850 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none"
+              {/* Toggle Mode */}
+              <div className="flex bg-slate-950/60 p-1 rounded-xl border border-slate-850">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadSuccess(null);
+                    setUploadError(null);
+                    setUploadMode("single");
+                  }}
+                  className={`flex-1 py-1.5 text-center text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                    uploadMode === "single"
+                      ? "bg-indigo-600 text-white shadow"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
                 >
-                  <option value="LOA">Letter of Award (LOA)</option>
-                  <option value="WORK_ORDER">Work Order</option>
-                  <option value="COMPLETION_CERTIFICATE">Completion Certificate</option>
-                  <option value="INVOICE">Invoice Receipt</option>
-                </select>
+                  Single PDF Ingestion
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadSuccess(null);
+                    setUploadError(null);
+                    setUploadMode("excel");
+                  }}
+                  className={`flex-1 py-1.5 text-center text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                    uploadMode === "excel"
+                      ? "bg-indigo-600 text-white shadow"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  Excel Batch Import
+                </button>
               </div>
 
-              <div>
-                <label className="border border-dashed border-slate-800 hover:border-indigo-500/50 rounded-2xl p-6 flex flex-col items-center text-center cursor-pointer transition bg-slate-950/20 hover:bg-slate-950/40">
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    onChange={handleFileUpload} 
-                    disabled={uploading} 
-                  />
-                  {uploading ? (
-                    <div className="space-y-2">
-                      <Loader2 className="w-7 h-7 text-indigo-500 animate-spin mx-auto" />
-                      <span className="block text-xs font-semibold text-slate-200">Extracting contract scope...</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="w-9 h-9 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto text-slate-400">
-                        <UploadCloud className="w-4.5 h-4.5" />
-                      </div>
-                      <span className="block text-xs font-semibold text-slate-350">Click to select contract PDF</span>
-                      <span className="block text-[9px] text-slate-500 font-medium">NLP automatically indexes domain capabilities</span>
-                    </div>
-                  )}
-                </label>
-              </div>
+              {uploadMode === "single" ? (
+                <>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Document Type</label>
+                    <select
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-850 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer"
+                    >
+                      <option value="LOA">Letter of Award (LOA)</option>
+                      <option value="WORK_ORDER">Work Order</option>
+                      <option value="COMPLETION_CERTIFICATE">Completion Certificate</option>
+                      <option value="INVOICE">Invoice Receipt</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="border border-dashed border-slate-805 hover:border-indigo-500/50 rounded-2xl p-6 flex flex-col items-center text-center cursor-pointer transition bg-slate-950/20 hover:bg-slate-950/40">
+                      <input 
+                        type="file" 
+                        accept=".pdf"
+                        className="hidden" 
+                        onChange={handleFileUpload} 
+                        disabled={uploading} 
+                      />
+                      {uploading ? (
+                        <div className="space-y-2">
+                          <Loader2 className="w-7 h-7 text-indigo-500 animate-spin mx-auto" />
+                          <span className="block text-xs font-semibold text-slate-200">Extracting contract scope...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="w-9 h-9 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                            <UploadCloud className="w-4.5 h-4.5" />
+                          </div>
+                          <span className="block text-xs font-semibold text-slate-350">Click to select contract PDF</span>
+                          <span className="block text-[9px] text-slate-500 font-medium">NLP automatically indexes domain capabilities</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="border border-dashed border-slate-805 hover:border-indigo-500/50 rounded-2xl p-6 flex flex-col items-center text-center cursor-pointer transition bg-slate-950/20 hover:bg-slate-950/40">
+                      <input 
+                        type="file" 
+                        accept=".xlsx, .xls"
+                        className="hidden" 
+                        onChange={handleExcelUpload} 
+                        disabled={uploading} 
+                      />
+                      {uploading ? (
+                        <div className="space-y-2">
+                          <Loader2 className="w-7 h-7 text-indigo-500 animate-spin mx-auto" />
+                          <span className="block text-xs font-semibold text-slate-200">Importing past projects...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="w-9 h-9 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                            <UploadCloud className="w-4.5 h-4.5 text-indigo-400" />
+                          </div>
+                          <span className="block text-xs font-semibold text-slate-350">Click to select projects Excel sheet</span>
+                          <span className="block text-[9px] text-slate-500 font-medium">Accepts Location, LOA Name, Project Name, value headers</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </>
+              )}
 
               {uploadSuccess && (
                 <div className="text-[10px] text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 flex gap-2">

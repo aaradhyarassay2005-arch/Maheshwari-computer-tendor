@@ -86,3 +86,30 @@ async def get_capabilities(
     service: ProjectService = Depends(get_project_service),
 ):
     return await service.get_capabilities()
+
+
+@router.post(
+    "/import-excel",
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload Excel sheet to batch import past projects",
+)
+async def import_past_projects_excel(
+    file: UploadFile = File(...),
+    service: ProjectService = Depends(get_project_service),
+):
+    filename = file.filename or ""
+    if not (filename.endswith(".xlsx") or filename.endswith(".xls")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file format. Only Excel files (.xlsx, .xls) are supported.",
+        )
+
+    try:
+        content = await file.read()
+        summary = await service.import_projects_from_excel(content)
+        return summary
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
