@@ -61,6 +61,12 @@ async def get_document_repository(
     return SQLAlchemyTenderDocumentRepository(session)
 
 
+async def get_metadata_repository(
+    session: AsyncSession = Depends(get_db_session)
+) -> SQLAlchemyTenderMetadataRepository:
+    return SQLAlchemyTenderMetadataRepository(session)
+
+
 async def get_tender_service(
     repo: SQLAlchemyTenderRepository = Depends(get_tender_repository),
     doc_repo: SQLAlchemyTenderDocumentRepository = Depends(get_document_repository),
@@ -68,14 +74,6 @@ async def get_tender_service(
 ) -> TenderService:
     """Instantiates and returns the TenderService configured with the repositories."""
     return TenderService(repo, doc_repo, metadata_repo)
-
-
-
-async def get_metadata_repository(
-    session: AsyncSession = Depends(get_db_session)
-) -> SQLAlchemyTenderMetadataRepository:
-    return SQLAlchemyTenderMetadataRepository(session)
-
 
 def get_storage_provider() -> LocalStorageProvider:
     return LocalStorageProvider()

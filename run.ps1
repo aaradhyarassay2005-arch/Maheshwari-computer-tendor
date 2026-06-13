@@ -1,6 +1,9 @@
 # Tender Intelligence Platform - Windows Start Utility
 # Automatically configures local PostgreSQL container, runs migrations, launches Backend & Frontend.
 
+$ProjectRoot = $PSScriptRoot
+Set-Location $ProjectRoot
+
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host "  TENDER INTELLIGENCE PLATFORM LAUNCHER       " -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
@@ -9,6 +12,8 @@ Write-Host "==============================================" -ForegroundColor Cya
 Write-Host "`n[1/5] Checking Docker daemon status..." -ForegroundColor Yellow
 $DockerInstalled = $true
 $DockerRunning = $true
+$ComposeCommand = $null
+$ComposeArgs = @()
 
 Get-Command docker -ErrorAction SilentlyContinue >$null
 if ($LastExitCode -ne 0 -and -not (Get-Command docker -ErrorAction SilentlyContinue)) {
@@ -20,6 +25,13 @@ if ($LastExitCode -ne 0 -and -not (Get-Command docker -ErrorAction SilentlyConti
         $DockerRunning = $false
         Write-Host "[WARNING] Docker daemon is not running. Please make sure Docker Desktop is started." -ForegroundColor Yellow
     }
+}
+
+if (Get-Command docker -ErrorAction SilentlyContinue) {
+    $ComposeCommand = "docker"
+    $ComposeArgs = @("compose")
+} elseif (Get-Command docker-compose -ErrorAction SilentlyContinue) {
+    $ComposeCommand = "docker-compose"
 }
 
 if (-not $DockerInstalled -or -not $DockerRunning) {
@@ -48,11 +60,15 @@ if (-not $DockerInstalled -or -not $DockerRunning) {
 } else {
     # Spin Up Local PostgreSQL Container
     Write-Host "`n[2/5] Starting local PostgreSQL database via Docker..." -ForegroundColor Yellow
-    docker-compose up -d db
-    if ($LastExitCode -ne 0) {
-        Write-Host "[WARNING] Failed to launch PostgreSQL container via docker-compose." -ForegroundColor Yellow
+    if ($ComposeCommand) {
+        & $ComposeCommand @ComposeArgs up -d db
+        if ($LastExitCode -ne 0) {
+            Write-Host "[WARNING] Failed to launch PostgreSQL container via Docker Compose." -ForegroundColor Yellow
+        } else {
+            Write-Host "[SUCCESS] Database container started." -ForegroundColor Green
+        }
     } else {
-        Write-Host "[SUCCESS] Database container started." -ForegroundColor Green
+        Write-Host "[WARNING] Neither 'docker compose' nor 'docker-compose' is available. Install Docker Desktop, then rerun .\run.ps1 from the project root." -ForegroundColor Yellow
     }
     # Wait for database health check
     Write-Host "Waiting for database to accept connections..." -ForegroundColor Yellow

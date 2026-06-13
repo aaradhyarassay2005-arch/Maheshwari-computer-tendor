@@ -76,7 +76,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         {/* Profile Details Card */}
         <div className="glass-panel rounded-2xl p-6 space-y-4 flex flex-col items-center text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl pointer-events-none" />
           
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center font-bold text-xl text-white shadow-inner shadow-white/20">
             {currentUser.full_name ? currentUser.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "U"}

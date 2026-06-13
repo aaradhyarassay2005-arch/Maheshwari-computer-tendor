@@ -67,6 +67,10 @@ class TenderDownloaderService:
         tender.updated_at = now
         await self.tender_repo.update(tender)
 
+        # Commit status transition to release database locks during network I/O
+        if hasattr(self.doc_repo, "session") and hasattr(self.doc_repo.session, "commit"):
+            await self.doc_repo.session.commit()
+
         try:
             logger.info(
                 "Starting document download",
@@ -133,11 +137,10 @@ class TenderDownloaderService:
             except Exception:
                 pass
 
-            logger.error(
+            logger.exception(
                 "Document download failed",
                 tender_id=str(tender_id),
                 attempt=doc.attempts,
-                error=error_msg,
             )
 
             # Update TenderDocument fields on failure

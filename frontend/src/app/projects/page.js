@@ -178,7 +178,7 @@ export default function ProjectsPage() {
       {showUploadModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="glass-panel max-w-md w-full rounded-2xl p-6 border-indigo-500/30 relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-600/5 rounded-full blur-[60px]" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-600/5 rounded-full blur-[60px] pointer-events-none" />
             <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
                 <UploadCloud className="w-4.5 h-4.5 text-indigo-400" />
